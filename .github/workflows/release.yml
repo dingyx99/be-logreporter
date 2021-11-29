@@ -1,0 +1,32 @@
+on:
+  create:
+    tags:
+    - v*
+
+name: Create release
+
+jobs:
+
+  release:
+    name: Release on GitHub
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v1
+    
+    - name: Replace secrets
+      run: perl -pi -e 's/PASTEBIN_API_KEY/$ENV{KEY}/' main.go
+      env:
+        KEY: ${{ secrets.PASTEBIN_API_KEY }}
+
+    - name: Validates GO releaser config
+      uses: docker://goreleaser/goreleaser:latest
+      with:
+        args: check
+
+    - name: Create release on GitHub
+      uses: docker://goreleaser/goreleaser:latest
+      with:
+        args: release --skip-validate
+      env:
+        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
